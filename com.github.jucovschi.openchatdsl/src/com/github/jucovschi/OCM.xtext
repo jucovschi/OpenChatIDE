@@ -1,0 +1,54 @@
+grammar com.github.jucovschi.OCM with org.eclipse.xtext.common.Terminals
+
+generate ocm "http://www.github.com/jucovschi/OCM"
+
+Model:
+	(model += ChatModel | vars += VarDef | inits += InitState | imports += Import | settings += Settings )*;
+
+terminal Float: '-'? INT ('.' INT)?;
+	
+InitState:
+	'Init'
+		 (effects += Effects)+;
+
+Settings:
+	'settings' '{' 
+		(variable+=ID '=' value+=STRING ';')+
+	'}';
+	
+
+Import:
+	'import' importURI = STRING ';';
+
+VarDef : 
+	'var' name=ID ';';
+
+ChatModel:
+	'Model' 'trigger' '=' (triggers+=[VarDef](',' triggers+=[VarDef])*) '{' 
+		rules += Rule*
+	'}';
+
+Rule:
+	'Rule' (name=STRING)? ('priority' '=' priority=STRING)? '{'
+		(condcases += IfStatement)* ('default' cases += Effects)?
+	'}';
+	
+IfStatement:
+    'if' condition=Condition 'then' (effects+=Effects+);
+    
+Condition:
+	SimpleCondition | ComplexCondition;
+
+SimpleCondition: varName = [VarDef] cond=('='|'in'|'contains'|'!=') value=STRING;
+
+ComplexCondition:
+	'(' condNode+=SimpleCondition ')' (condType+=('and'|'or') '(' condNode+=SimpleCondition ')')*;
+
+Effects:
+	('util' '=' util=STRING)? ('prob' '=' prob=Float)? '{' effects += Effect* '}'
+;
+
+Effect:
+	(predict='predict')? varName = [VarDef] '=' value = STRING ;
+	
+
